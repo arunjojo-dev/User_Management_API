@@ -1,6 +1,154 @@
 @User_Management_API_HostAddress = http://localhost:5090
+@AuthToken = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkbWluIFVzZXIiLCJpYXQiOjE1MTYyMzkwMjJ9.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
 
-GET {{User_Management_API_HostAddress}}/weatherforecast/
+# ============================================================================
+# AUTHENTICATION NOTE FOR DEVELOPMENT
+# ============================================================================
+# In Development mode (ASPNETCORE_ENVIRONMENT=Development):
+#   - Authentication is DISABLED for easy testing
+#   - You do NOT need to include the Authorization header
+#   - All API endpoints are accessible without a token
+#
+# In Production mode:
+#   - Authentication is ENABLED
+#   - You MUST include a valid Bearer token in the Authorization header
+#   - Use format: Authorization: Bearer <your-token-here>
+#
+# To test with authentication enabled:
+#   1. Set ASPNETCORE_ENVIRONMENT=Production
+#   2. Include the @AuthToken header (shown above) with requests
+# ============================================================================ ============================================================================
+### HEALTH CHECK (No Authentication Required)
+### ============================================================================
+
+### Check API Health Status
+GET {{User_Management_API_HostAddress}}/health
 Accept: application/json
+
+###
+
+### ============================================================================
+### GET REQUESTS - Retrieve Users
+### ============================================================================
+
+### Get All Users - Returns list of all active users
+GET {{User_Management_API_HostAddress}}/api/users
+Authorization: {{AuthToken}}
+Accept: application/json
+
+###
+
+### Get Specific User by ID - Replace {id} with actual user ID (e.g., 1)
+GET {{User_Management_API_HostAddress}}/api/users/1
+Authorization: {{AuthToken}}
+Accept: application/json
+
+###
+
+### ============================================================================
+### POST REQUEST - Create New User
+### ============================================================================
+
+### Create a New User - Requires valid user data with all required fields
+POST {{User_Management_API_HostAddress}}/api/users
+Authorization: {{AuthToken}}
+Content-Type: application/json
+
+{
+  "name": "Bob Wilson",
+  "email": "bob.wilson@techhive.com",
+  "phoneNumber": "+1-555-0104",
+  "jobTitle": "DevOps Engineer",
+  "department": "Infrastructure"
+}
+
+###
+
+### ============================================================================
+### PUT REQUEST - Update Existing User
+### ============================================================================
+
+### Update User Details - Replace {id} with actual user ID (e.g., 1)
+PUT {{User_Management_API_HostAddress}}/api/users/1
+Authorization: {{AuthToken}}
+Content-Type: application/json
+
+{
+  "name": "John Doe Updated",
+  "email": "john.doe.updated@techhive.com",
+  "phoneNumber": "+1-555-0105",
+  "jobTitle": "Principal Engineer",
+  "department": "Engineering"
+}
+
+###
+
+### ============================================================================
+### DELETE REQUEST - Remove User
+### ============================================================================
+
+### Delete User - Performs soft delete (marks as inactive)
+### Replace {id} with actual user ID (e.g., 1)
+DELETE {{User_Management_API_HostAddress}}/api/users/1
+Authorization: {{AuthToken}}
+
+###
+
+### ============================================================================
+### ERROR SCENARIO EXAMPLES
+### ============================================================================
+
+### Example: Unauthorized Request (Missing Token)
+GET {{User_Management_API_HostAddress}}/api/users
+Accept: application/json
+
+###
+
+### Example: Retrieve Non-Existent User
+GET {{User_Management_API_HostAddress}}/api/users/9999
+Authorization: {{AuthToken}}
+Accept: application/json
+
+###
+
+### Example: Invalid Email Format - Will Return 400 Bad Request
+POST {{User_Management_API_HostAddress}}/api/users
+Authorization: {{AuthToken}}
+Content-Type: application/json
+
+{
+  "name": "Invalid User",
+  "email": "not-an-email",
+  "phoneNumber": "+1-555-0106",
+  "jobTitle": "Developer",
+  "department": "Engineering"
+}
+
+###
+
+### Example: Duplicate Email - Will Return 400 Bad Request
+POST {{User_Management_API_HostAddress}}/api/users
+Authorization: {{AuthToken}}
+Content-Type: application/json
+
+{
+  "name": "Duplicate John",
+  "email": "john.doe@techhive.com",
+  "phoneNumber": "+1-555-0107",
+  "jobTitle": "Developer",
+  "department": "Engineering"
+}
+
+###
+
+### Example: Missing Required Field - Will Return 400 Bad Request
+POST {{User_Management_API_HostAddress}}/api/users
+Authorization: {{AuthToken}}
+Content-Type: application/json
+
+{
+  "name": "Incomplete User",
+  "email": "incomplete@techhive.com"
+}
 
 ###
