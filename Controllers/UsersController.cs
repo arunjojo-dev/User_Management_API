@@ -1,8 +1,86 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using User_Management_API.Models;
+using User_Management_API.Services;
+using User_Management_API.DTOs;
 
 namespace User_Management_API.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Produces("application/json")]
+public class UsersController : ControllerBase
+{
+    private readonly ILogger<UsersController> _logger;
+    private readonly IUserService _service;
+
+    public UsersController(ILogger<UsersController> logger, IUserService service)
+    {
+        _logger = logger;
+        _service = service;
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAllUsers()
+    {
+        var users = await _service.GetAllAsync();
+        return Ok(users);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUserById(int id)
+    {
+        var user = await _service.GetByIdAsync(id);
+        if (user == null) return NotFound(new { error = "User not found", message = $"No active user found with ID {id}", timestamp = DateTime.UtcNow });
+        return Ok(user);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(new { error = "Validation failed", details = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)), timestamp = DateTime.UtcNow });
+        try
+        {
+            var created = await _service.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetUserById), new { id = created.Id }, created);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Create failed");
+            return BadRequest(new { error = ex.Message, timestamp = DateTime.UtcNow });
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateUser(int id, [FromBody] UpdateUserDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(new { error = "Validation failed", details = ModelState.Values.SelectMany(v => v.Errors.Select(e => e.ErrorMessage)), timestamp = DateTime.UtcNow });
+        try
+        {
+            var updated = await _service.UpdateAsync(id, dto);
+            if (updated == null) return NotFound(new { error = "User not found", message = $"No active user found with ID {id}", timestamp = DateTime.UtcNow });
+            return Ok(updated);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Update failed");
+            return BadRequest(new { error = ex.Message, timestamp = DateTime.UtcNow });
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(int id)
+    {
+        var deleted = await _service.DeleteAsync(id);
+        if (!deleted) return NotFound(new { error = "User not found", message = $"No active user found with ID {id}", timestamp = DateTime.UtcNow });
+        return NoContent();
+    }
+
+    [HttpGet("/health")]
+    [AllowAnonymous]
+    public IActionResult Health() => Ok(new { status = "healthy", service = "User Management API", timestamp = DateTime.UtcNow });
+}
+
 
 /// <summary>
 /// User Management API Controller

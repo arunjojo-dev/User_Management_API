@@ -1,35 +1,56 @@
+using Microsoft.EntityFrameworkCore;
 using User_Management_API.Middleware;
+using User_Management_API.Data;
+using User_Management_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// ============================================================================
+n// ============================================================================
 // STAGE 1: CONFIGURE SERVICES
 // ============================================================================
 // Add and configure services for dependency injection and API functionality
-
-// Add ASP.NET Core Controllers
+n// Add ASP.NET Core Controllers
 builder.Services.AddControllers();
-
-// Add OpenAPI/Swagger support for API documentation
+n// Add OpenAPI/Swagger support for API documentation
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-
-// Add CORS (Cross-Origin Resource Sharing) if needed for frontend integration
+n// Configure EF Core (SQLite) for simple persistence
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
+    options.UseSqlite("Data Source=users.db");
+});
+n// Register application services
+builder.Services.AddScoped<IUserService, UserService>();
+n// Add CORS (Cross-Origin Resource Sharing) if needed for frontend integration
 // Customize the policy based on your frontend URL
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", builder =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        builder.AllowAnyOrigin()
-               .AllowAnyMethod()
-               .AllowAnyHeader();
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
-
-// ============================================================================
+n// ============================================================================
 // BUILD THE APPLICATION
 // ============================================================================
 var app = builder.Build();
+n// Ensure database is created and seed a couple of users if empty
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.EnsureCreated();
+
+    if (!db.Users.Any())
+    {
+        db.Users.AddRange(new[]
+        {
+            new User_Management_API.Models.User { Name = "John Doe", Email = "john.doe@techhive.com", PhoneNumber = "+1-555-0101", JobTitle = "Senior Developer", Department = "Engineering", CreatedAt = DateTime.UtcNow.AddDays(-30), UpdatedAt = DateTime.UtcNow.AddDays(-1), IsActive = true },
+            new User_Management_API.Models.User { Name = "Jane Smith", Email = "jane.smith@techhive.com", PhoneNumber = "+1-555-0102", JobTitle = "Product Manager", Department = "Product", CreatedAt = DateTime.UtcNow.AddDays(-20), UpdatedAt = DateTime.UtcNow.AddDays(-2), IsActive = true }
+        });
+        db.SaveChanges();
+    }
+}
 
 // ============================================================================
 // STAGE 2: CONFIGURE MIDDLEWARE PIPELINE
