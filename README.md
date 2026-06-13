@@ -440,3 +440,8 @@ This project is developed for TechHive Solutions.
 
 **Arun Jojo**  
 GitHub: [@arunjojo-dev](https://github.com/arunjojo-dev)
+
+## AI Assistance
+
+This repository used GitHub Copilot during debugging and development to help identify and fix validation and middleware issues. Commits and documentation may reference Copilot where applicable.
+
